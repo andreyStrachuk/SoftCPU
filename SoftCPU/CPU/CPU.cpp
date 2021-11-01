@@ -22,10 +22,13 @@ int main () {
     int fileSize = GetFileSize (code);
 
     softCPU.machineCode = (char *)calloc (fileSize, sizeof (char));
+    softCPU.RAM = (double *)calloc (RAMVOLUME, sizeof (double));
 
     fread (softCPU.machineCode, sizeof (char), fileSize, code);
 
     int res = RunCPU (&softCPU);
+
+    // free
 
     return 0;
 }

@@ -1,8 +1,8 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-static char N_HLT [] = "hlt";
-static char N_PUSH [] = "push";
+static const char N_HLT [] = "hlt"; // const
+static char N_PUSH [] = "push"; // N_PUSH new naming
 static char N_POP [] = "pop";
 static char N_ADD [] = "add";
 static char N_MUL [] = "mul";
@@ -11,6 +11,8 @@ static char N_OUT [] = "out";
 static char N_IN [] = "in";
 static char N_SQRT [] = "sqrt";
 static char N_DIV [] = "div";
+static char N_COS [] = "cos";
+static char N_SIN [] = "sin";
 
 static char N_AX [] = "ax";
 static char N_BX [] = "bx";
@@ -41,7 +43,9 @@ enum COMMANDS_NUMBERS {
     OUT,
     IN,
     SQRT,
-    DIV
+    DIV,
+    COS,
+    SIN
 };
 
 enum TYPEOFWRITE {
@@ -56,7 +60,8 @@ enum ERRORS {
     UNKNOWN_REGISTER = -9,
     INCORRECT_INPUT = -8,
     OK = -7,
-    ZERO_DIV = -6
+    ZERO_DIV = -6,
+    WRONG_ADDRESS = -5
 };
 
 #endif

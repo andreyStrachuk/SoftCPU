@@ -57,31 +57,59 @@ int NumberOfStrings (FILE *asmProgram) {
     return number;
 }
 
-int DetectCommand (char *src) {
-    assert (src);
+int DetectCommand (char *src) { //!TODO strncmp
+    assert (src); //!TODO my own assert with return
     int cmdNum = 0;
 
     if (strcmp (N_HLT, src) == 0) {
         cmdNum = HLT;
-    } else if (strcmp (N_MUL, src) == 0) {
+    } 
+    
+    else if (strcmp (N_MUL, src) == 0) {
         cmdNum = MUL;
-    } else if (strcmp (N_OUT, src) == 0) {
+    } 
+    
+    else if (strcmp (N_OUT, src) == 0) {
         cmdNum = OUT;
-    } else if (strcmp (N_PUSH, src) == 0) {
+    } 
+    
+    else if (strcmp (N_PUSH, src) == 0) {
         cmdNum = PUSH;
-    } else if (strcmp (N_SUB, src) == 0) {
+    } 
+    
+    else if (strcmp (N_SUB, src) == 0) {
         cmdNum = SUB;
-    } else if (strcmp (N_ADD, src) == 0) {
+    } 
+    
+    else if (strcmp (N_ADD, src) == 0) {
         cmdNum = ADD;
-    } else if (strcmp (N_IN, src) == 0) {
+    } 
+    
+    else if (strcmp (N_IN, src) == 0) {
         cmdNum = IN;
-    } else if (strcmp (N_SQRT, src) == 0) {
+    } 
+    
+    else if (strcmp (N_SQRT, src) == 0) {
         cmdNum = SQRT;
-    } else if (strcmp (N_POP, src) == 0) {
+    } 
+    
+    else if (strcmp (N_POP, src) == 0) {
         cmdNum = POP;
-    } else if (strcmp (N_DIV, src) == 0) {
+    }
+    
+    else if (strcmp (N_DIV, src) == 0) {
         cmdNum = DIV;
-    } else {
+    }
+
+    else if (strcmp (N_SIN, src) == 0) {
+        cmdNum = SIN;
+    }
+
+    else if (strcmp (N_COS, src) == 0) {
+        cmdNum = COS;
+    }
+
+    else {
         cmdNum = -10;
         return cmdNum;
     }
@@ -113,7 +141,7 @@ int DetectRegister (char *src) {
 char *SkipArg (char *src) {
     assert (src);
 
-    while (*src != ' ' && *src != '\n' && *src != '\0') src++;
+    while (*src != ' ' && *src != '\n' && *src != '\0') src++; //!TODO isspace
 
     return src;
 }
@@ -123,10 +151,11 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
     assert (cmds);
 
     char commands [10] = {};
+    char *machineCode = (char *)calloc (SIZEOFCODEARR, sizeof (char));
+    int sizeOfCodeArr = 0;
     char reg [10] = {};
-    char cmdNumber = 0;
+    unsigned char cmdNumber = 0;
     double arg = 0;
-    int ok = 0;
     struct COMMAND cmdNum = {};
     int typeOfReg = 0;
     int resOfScan = 0;
@@ -147,7 +176,7 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
         do {
             if (typeOfCmd == PUSH) {
 
-                cmds[i]->str = SkipSpaceSymbols (cmds[i]->str);
+                cmds[i]->str = SkipSpaceSymbols (cmds[i]->str); // skip arg skipspacesymbols
                 if (*(cmds[i]->str) == ';' ||  *(cmds[i]->str) == '\0') {
                     return INCORRECT_INPUT;
                 }
@@ -158,12 +187,69 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
                     cmds[i]->str = SkipReadWord (cmds[i]->str);
                     ASSERT_CORRECT (cmds);
 
-                    printf ("this is double value = %lg\n", arg);
-
                     FillBitField (cmdNum, cmdNumber, PUSH, IMM);
 
-                    fwrite (&cmdNumber, sizeof (char), 1, code);
-                    fwrite (&arg, sizeof (double), 1, code);
+                    machineCode [sizeOfCodeArr++] = cmdNumber;
+
+                    PutDouble (arg, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                int shift = 0;
+                int ok = 0;
+                resOfScan = sscanf (cmds[i]->str, "[%d]%n", &shift, &ok);
+
+                if (ok == 3) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    FillBitField (cmdNum, cmdNumber, PUSH, MEM);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%d+%2s]%n", &shift, reg, &ok);
+
+                if (ok == 6) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, PUSH, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%2s]%n", reg, &ok);
+
+                if (ok == 4) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, PUSH, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
 
                     break;
                 }
@@ -183,8 +269,8 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
 
                 FillBitField (cmdNum, cmdNumber, PUSH, REG);
 
-                fwrite (&cmdNumber, sizeof (char), 1, code);
-                fwrite (&typeOfReg, sizeof (char), 1, code);
+                machineCode [sizeOfCodeArr++] = cmdNumber;
+                machineCode [sizeOfCodeArr++] = typeOfReg;
 
             }
             
@@ -194,10 +280,69 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
                 if (*(cmds[i]->str) == ';' || *(cmds[i]->str) == '\0') {
                     FillBitField (cmdNum, cmdNumber, POP, IMM);
 
-                    fwrite (&cmdNumber, sizeof (char), 1, code);
+                    machineCode [sizeOfCodeArr++] = cmdNumber;
 
                     break;
                 }
+
+                int shift = 0;
+                int ok = 0;
+                resOfScan = sscanf (cmds[i]->str, "[%d]%n", &shift, &ok);
+
+                if (ok == 3) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    FillBitField (cmdNum, cmdNumber, POP, MEM);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%d+%2s]%n", &shift, reg, &ok);
+
+                if (ok == 6) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, POP, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%2s]%n", reg, &ok);
+
+                if (ok == 4) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, POP, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+
+                    break;
+                }
+
                 resOfScan = sscanf (cmds[i]->str, "%s", reg);
                 typeOfReg = DetectRegister (reg);
 
@@ -210,8 +355,8 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
 
                 FillBitField (cmdNum, cmdNumber, POP, REG);
 
-                fwrite (&cmdNumber, sizeof (char), 1, code);
-                fwrite (&typeOfReg, sizeof (char), 1, code);
+                machineCode [sizeOfCodeArr++] = cmdNumber;
+                machineCode [sizeOfCodeArr++] = typeOfReg;
 
                 break;
             } 
@@ -232,8 +377,9 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
 
             FillBitField (cmdNum, cmdNumber, PUSH, IMM);
 
-            fwrite (&cmdNumber, sizeof (char), 1, code);
-            fwrite (&arg, sizeof (double), 1, code);
+            machineCode [sizeOfCodeArr++] = cmdNumber;
+
+            PutDouble (arg, machineCode, &sizeOfCodeArr);
 
             continue;
         }
@@ -242,10 +388,12 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
                 ASSERT_CORRECT (cmds);
 
                 FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);
-                fwrite (&cmdNumber, sizeof (char), 1, code);
+                machineCode[sizeOfCodeArr++] = cmdNumber;
         }
 
     }
+
+    fwrite (machineCode, sizeof (char), sizeOfCodeArr, code);
 
     return OK;
 }
@@ -301,5 +449,25 @@ void PrintErrors (int typeOfError) {
         default : {
             printf ("Unknown error!\nError number: %d\n", typeOfError);
         }
+    }
+}
+
+void PutDouble (double value, char *ptr, int *sizeOfArr) {
+    char *p = (char *)(&value);
+
+    for (int i = 0; i < sizeof value; i++) {
+        *(ptr + *sizeOfArr) = *p;
+        p++;
+        (*sizeOfArr)++;
+    }
+}
+
+void PutInt (int value, char *ptr, int *sizeOfArr) {
+    char *p = (char *)(&value);
+
+    for (int i = 0; i < 2; i++) {
+        *(ptr + *sizeOfArr) = *p;
+        p++;
+        (*sizeOfArr)++;
     }
 }

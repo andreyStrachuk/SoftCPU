@@ -40,24 +40,24 @@ int WriteToRegister (int regType, CPU *softCPU, double val) {
     assert (softCPU);
 
     switch (regType) {
-    case AX:
-        softCPU->ax = val;
-        break;
+        case AX:
+            softCPU->ax = val;
+            break;
 
-    case BX:
-        softCPU->bx = val;
-        break;
+        case BX:
+            softCPU->bx = val;
+            break;
 
-    case CX:
-        softCPU->cx = val;
-        break;
+        case CX:
+            softCPU->cx = val;
+            break;
 
-    case DX:
-        softCPU->dx = val;
-        break;
+        case DX:
+            softCPU->dx = val;
+            break;
 
-    default : 
-        return UNKNOWN_REGISTER;
+        default : 
+            return UNKNOWN_REGISTER;
     }
 
     return OK;
@@ -70,22 +70,28 @@ int RunCPU (CPU *softCPU) {
     double topVal = 0;
     double prevTopVal = 0;
 
+    int index = 0;
+    int shift = 0;
+    double val = 0;
+
     while (1) {
         int cmd = *(softCPU->machineCode + softCPU->ip) & 0x1F;
-        int type = *(softCPU->machineCode + softCPU->ip) & 0xE0;
+        int type = *(unsigned char *)(softCPU->machineCode + softCPU->ip) & 0xE0;
 
         switch (cmd) {
         case PUSH:
-            if (type & 0x40) {
+            if (type & 0x20 && !(type & 0x40) && !(type & 0x80)) { // ob binary code
+                printf ("1 push\n");
                 softCPU->ip++;
-                double val = *(double *)(softCPU->machineCode + softCPU->ip);
+                val = *(double *)(softCPU->machineCode + softCPU->ip);
 
                 PushStack (softCPU->st, val);
 
                 softCPU->ip += sizeof (double);
             }
 
-            if (type & 0x80) {
+            else if (type & 0x40 && type & 0x80 == 0) {
+                printf ("2 push\n");
                 softCPU->ip++;
 
                 int reg = *(char *)(softCPU->machineCode + softCPU->ip);
@@ -96,23 +102,97 @@ int RunCPU (CPU *softCPU) {
 
                 softCPU->ip++;
             }
+
+            else if (type & 0x80 && type & 0x40 == 0 && type & 0x20 == 0) {
+
+                printf ("3 push\n");
+
+                softCPU->ip++;
+
+                shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip += 2;
+
+                if (shift > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = softCPU->RAM [shift];
+
+                PushStack (softCPU->st, val);
+
+            }
+
+            else if (type & 0x80 && type & 0x40 && type & 0x20 == 0) {
+
+                printf ("4 push\n");
+
+                softCPU->ip++;
+
+                int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip++;
+
+                int index = GetRegValue (typeOfReg, softCPU);
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = softCPU->RAM [index];
+
+                PushStack (softCPU->st, val);
+
+            }
+
+            if (type & 0x80 && type & 0x40 && type & 0x20) {
+                softCPU->ip++;
+                printf ("5 push\n");
+
+                int typeOfReg = *(softCPU->machineCode + softCPU->ip);
+
+                printf ("typeofreg = %d\n", typeOfReg);
+
+                softCPU->ip ++;
+
+                double regValue = GetRegValue (typeOfReg, softCPU);
+
+                printf ("reg value = %lg\n", regValue);
+
+                int shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+                softCPU->ip += 2;
+
+                printf ("shift = %d\n", shift);
+
+                int index = (int)regValue + shift; 
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = softCPU->RAM[index];
+
+                PushStack (softCPU->st, val);      
+            }
             break;
 
         case POP: 
-            if (type & 0x40) {
+            if ((type & 0x20) && !(type & 0x40) && !(type & 0x80)) {
                 softCPU->ip++;
+                printf ("1 pop\n");
                 
                 PopStack (softCPU->st);
                 
-                softCPU->ip++;
+                break;
             }
 
-            if (type & 0x80) {
+            if (type & 0x40 && !(type & 0x80) && !(type & 0x40)) {
+                printf ("2 pop\n");
                 softCPU->ip++;
 
                 int reg = *(char *)(softCPU->machineCode + softCPU->ip);
 
-                double val = PopStack (softCPU->st); 
+                double val = PopStack (softCPU->st); // define PopStack
 
                 int res = WriteToRegister (reg, softCPU, val);
 
@@ -121,6 +201,71 @@ int RunCPU (CPU *softCPU) {
                 }
 
                 softCPU->ip++;
+                break;
+            }
+
+            if (type & 0x80 && !(type & 0x40)) {
+                printf ("3 pop\n");
+                softCPU->ip++;
+
+                int shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip += 2;
+
+                if (shift > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = PopStack (softCPU->st);
+
+                softCPU->RAM [shift] = val;
+
+            }
+
+            if ((type & 0x80) && (type & 0x40) && !(type & 0x20)) {
+                printf ("4 pop\n");
+                softCPU->ip++;
+
+                int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip++;
+
+                int index = GetRegValue (typeOfReg, softCPU);
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = PopStack (softCPU->st);
+
+                softCPU->RAM [index] = val;           
+            }
+
+            if (type & 0x80 && type & 0x40 && type & 0x20) {
+                printf ("5 pop\n");
+                softCPU->ip++;
+
+                int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);
+                if (typeOfReg == UNKNOWN_REGISTER) {
+                    return UNKNOWN_REGISTER;
+                }
+
+                softCPU->ip ++;
+
+                int regValue = GetRegValue (typeOfReg, softCPU);
+
+                int shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+                softCPU->ip += 2;
+
+                int index = (int)regValue + shift; 
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = PopStack (softCPU->st);
+
+                softCPU->RAM [index] = val;           
             }
             break; 
 
@@ -173,6 +318,24 @@ int RunCPU (CPU *softCPU) {
             topVal = PopStack (softCPU->st);
 
             PushStack (softCPU->st, sqrt (topVal));
+
+            softCPU->ip++;
+
+            break; 
+
+        case SIN:
+            topVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, sin (topVal));
+
+            softCPU->ip++;
+
+            break; 
+
+        case COS:
+            topVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, cos (topVal));
 
             softCPU->ip++;
 

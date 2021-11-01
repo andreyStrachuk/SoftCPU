@@ -3,6 +3,8 @@
 
 #include "../lib/stack.h"
 
+#define RAMVOLUME 16384
+
 struct CPU {
     Stack *st;
 
@@ -12,6 +14,7 @@ struct CPU {
     double dx;
 
     char *machineCode;
+    double *RAM;
 
     int ip;
 };
