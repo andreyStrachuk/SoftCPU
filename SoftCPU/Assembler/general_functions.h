@@ -9,7 +9,9 @@
 
 #include "commands.h"   
 
-#define SIZEOFCODEARR 100
+#define SIZEOFCODEARR 1000
+#define NUMBEROFLABELS 100
+#define EPSILON 1e-6
 
 #define FindNextWord(src)               src = SkipSpaceSymbols (src); \
                                         if (*src == '\0' || *src == ';') continue \
@@ -23,8 +25,16 @@
                                               field.cmd = command; \
                                               a = field.cmd + field.imm * (2 * 2 * 2 * 2 * 2) + field.reg * (2 * 2 * 2 * 2 * 2 * 2) + field.mem * (2 * 2 * 2 * 2 * 2 * 2 * 2)
 
-#define ASSERT_CORRECT(cmds)            cmds[i]->str = SkipSpaceSymbols (cmds[i]->str); \
-                                              if (*(cmds[i]->str) != ';' && *(cmds[i]->str) != '\0') { return INCORRECT_INPUT; }
+#define ASSERT_CORRECT(src)            src = SkipSpaceSymbols (src); \
+                                              if (*src != ';' && *src != '\0') { return INCORRECT_INPUT; }
+
+#define CheckLabel(src, lbls, labelIp, sizeOfCodeArr)   int res = CheckIfLabel (src, lbls, labelIp, sizeOfCodeArr); \
+                                                        printf ("labelIp = %d\ni = %d\n", res, *labelIp); \
+                                                        if (res == OK) { \
+                                                            lbls[*labelIp].ip = sizeOfCodeArr; \
+                                                            (*labelIp)++; \
+                                                            continue; \
+                                                        }
 
 struct Line {
     char *str;
@@ -47,7 +57,9 @@ int DetectRegister (char *src);
 
 char *SkipArg (char *src);
 
-int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings);
+int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings,Label *lbls, int typeOfCheck, int *labelIp);
+
+int PreAsmHandler (FILE *code, Line **cmds, int numbOfStrings);
 
 void InitializeArrOfPointers (Line **cmds, char *src, int numberOfStrings);
 
@@ -55,6 +67,14 @@ void PutDouble (double value, char *ptr, int *sizeOfArr);
 
 void PutInt (int value, char *ptr, int *sizeOfArr);
 
+int CheckIfLabel (char *src, Label *lbls, int *labelIp, int sizeOfCodeArr);
+
 Line *GetLine (char *src, Line *cmdLine);
+
+void InitializeArrOfLabels (Label *lbls);
+
+int FindLabelIndex (Label *lbls, char *src, int labelIp);
+
+int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp);
 
 #endif

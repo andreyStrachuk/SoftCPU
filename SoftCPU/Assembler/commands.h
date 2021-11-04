@@ -13,6 +13,8 @@ static char N_SQRT [] = "sqrt";
 static char N_DIV [] = "div";
 static char N_COS [] = "cos";
 static char N_SIN [] = "sin";
+static char N_JMP [] = "jmp";
+static char N_DEC [] = "dec";
 
 static char N_AX [] = "ax";
 static char N_BX [] = "bx";
@@ -20,10 +22,11 @@ static char N_CX [] = "cx";
 static char N_DX [] = "dx";
 
 enum TYPEOFREGISTER {
-    AX = 0x01,
-    BX = 0x02,
-    CX = 0x03,
-    DX = 0x04
+    #define DEF_REG_(name, number) R_##name = number,
+
+    #include "regs_def.h"
+
+    #undef DEF_REG_
 };
 
 struct COMMAND {
@@ -33,19 +36,18 @@ struct COMMAND {
     unsigned char cmd : 5;
 };
 
+struct Label {
+    int ip;
+    char *txt;
+};
+
 enum COMMANDS_NUMBERS {
-    HLT,
-    PUSH,
-    POP,
-    ADD,
-    MUL,
-    SUB,
-    OUT,
-    IN,
-    SQRT,
-    DIV,
-    COS,
-    SIN
+    
+    #define DEF_CMD_(name, numbOfCmd, argNumber, code)  CMD_##name = numbOfCmd,                                           \
+
+    #include "commands_def.h"
+
+    #undef DEF_CMD_
 };
 
 enum TYPEOFWRITE {
@@ -61,7 +63,9 @@ enum ERRORS {
     INCORRECT_INPUT = -8,
     OK = -7,
     ZERO_DIV = -6,
-    WRONG_ADDRESS = -5
+    WRONG_ADDRESS = -5,
+    FIRST,
+    SECOND
 };
 
 #endif

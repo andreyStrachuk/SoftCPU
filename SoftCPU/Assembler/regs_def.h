@@ -1,0 +1,8 @@
+DEF_REG_ (AX, 0x01)
+
+DEF_REG_ (BX, 0x02)
+
+DEF_REG_ (CX, 0x03)
+
+DEF_REG_ (DX, 0x04)
+

@@ -1,0 +1,547 @@
+int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings) {
+    assert (code);
+    assert (cmds);
+
+    char commands [10] = {};
+    char *machineCode = (char *)calloc (SIZEOFCODEARR, sizeof (char));
+    int sizeOfCodeArr = 0;
+    char reg [10] = {};
+    unsigned char cmdNumber = 0;
+    double arg = 0;
+    struct COMMAND cmdNum = {};
+    int typeOfReg = 0;
+    int resOfScan = 0;
+    int typeOfCmd = 0; 
+
+    for (int i = 0; i < numbOfStrings; i++) {
+        FindNextWord (cmds[i]->str);
+
+        resOfScan = sscanf (cmds[i]->str, "%s", commands);
+
+        typeOfCmd = DetectCommand (commands);
+        if (typeOfCmd == UNKNOWN_COMMAND) {
+            return UNKNOWN_COMMAND;
+        }
+
+        cmds[i]->str = SkipReadWord (cmds[i]->str);
+
+        do {
+            if (typeOfCmd == CMD_PUSH) {
+
+                cmds[i]->str = SkipSpaceSymbols (cmds[i]->str); // skip arg skipspacesymbols
+                if (*(cmds[i]->str) == ';' ||  *(cmds[i]->str) == '\0') {
+                    return INCORRECT_INPUT;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "%lg", &arg);
+
+                if (resOfScan != 0) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    FillBitField (cmdNum, cmdNumber, CMD_PUSH, IMM);
+
+                    machineCode [sizeOfCodeArr++] = cmdNumber;
+
+                    PutDouble (arg, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                int shift = 0;
+                int ok = 0;
+                resOfScan = sscanf (cmds[i]->str, "[%d]%n", &shift, &ok);
+
+                if (ok == 3) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    FillBitField (cmdNum, cmdNumber, CMD_PUSH, MEM);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%d+%2s]%n", &shift, reg, &ok);
+
+                if (ok == 6) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, CMD_PUSH, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%2s]%n", reg, &ok);
+
+                if (ok == 4) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, CMD_PUSH, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "%s", reg);
+                if (resOfScan == 0) {
+                    return INCORRECT_INPUT;
+                }
+                    
+                typeOfReg = DetectRegister (reg);
+                if (typeOfReg == UNKNOWN_REGISTER) {
+                    return UNKNOWN_REGISTER;
+                }
+
+                cmds[i]->str = SkipReadWord (cmds[i]->str);
+                ASSERT_CORRECT (cmds);
+
+                FillBitField (cmdNum, cmdNumber, CMD_PUSH, REG);
+
+                machineCode [sizeOfCodeArr++] = cmdNumber;
+                machineCode [sizeOfCodeArr++] = typeOfReg;
+
+            }
+            
+            if (typeOfCmd == CMD_POP) {
+                cmds[i]->str = SkipSpaceSymbols (cmds[i]->str);
+
+                if (*(cmds[i]->str) == ';' || *(cmds[i]->str) == '\0') {
+                    FillBitField (cmdNum, cmdNumber, CMD_POP, IMM);
+
+                    machineCode [sizeOfCodeArr++] = cmdNumber;
+
+                    break;
+                }
+
+                int shift = 0;
+                int ok = 0;
+                resOfScan = sscanf (cmds[i]->str, "[%d]%n", &shift, &ok);
+
+                if (ok == 3) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    FillBitField (cmdNum, cmdNumber, CMD_POP, MEM);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%d+%2s]%n", &shift, reg, &ok);
+
+                if (ok == 6) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, CMD_POP, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+                    PutInt (shift, machineCode, &sizeOfCodeArr);
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "[%2s]%n", reg, &ok);
+
+                if (ok == 4) {
+                    cmds[i]->str = SkipReadWord (cmds[i]->str);
+                    ASSERT_CORRECT (cmds);
+
+                    typeOfReg = DetectRegister (reg);
+                    if (typeOfReg == UNKNOWN_REGISTER) {
+                        return UNKNOWN_REGISTER;
+                    }
+
+                    FillBitField (cmdNum, cmdNumber, CMD_POP, MEM);
+                    cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);
+
+                    machineCode[sizeOfCodeArr++] = cmdNumber;
+                    machineCode[sizeOfCodeArr++] = typeOfReg;
+
+                    break;
+                }
+
+                resOfScan = sscanf (cmds[i]->str, "%s", reg);
+                typeOfReg = DetectRegister (reg);
+
+                if (typeOfReg == UNKNOWN_REGISTER) {
+                    return UNKNOWN_REGISTER;
+                }
+
+                cmds[i]->str = SkipReadWord (cmds[i]->str);
+                ASSERT_CORRECT (cmds);
+
+                FillBitField (cmdNum, cmdNumber, CMD_POP, REG);
+
+                machineCode [sizeOfCodeArr++] = cmdNumber;
+                machineCode [sizeOfCodeArr++] = typeOfReg;
+
+                break;
+            } 
+
+        } while (0);
+
+        if (typeOfCmd == CMD_IN) {
+            cmds[i]->str = SkipReadWord (cmds[i]->str);
+            ASSERT_CORRECT (cmds);
+
+            printf ("Enter the number: ");
+
+            int resOfSc = scanf ("%lg", &arg);
+
+            if (resOfSc == 0) {
+                return INCORRECT_INPUT;
+            }
+
+            FillBitField (cmdNum, cmdNumber, CMD_PUSH, IMM);
+
+            machineCode [sizeOfCodeArr++] = cmdNumber;
+
+            PutDouble (arg, machineCode, &sizeOfCodeArr);
+
+            continue;
+        }
+
+        if (typeOfCmd != CMD_PUSH && typeOfCmd != CMD_POP) {
+                ASSERT_CORRECT (cmds);
+
+                FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);
+                machineCode[sizeOfCodeArr++] = cmdNumber;
+        }
+
+    }
+
+    fwrite (machineCode, sizeof (char), sizeOfCodeArr, code);
+
+    return OK;
+}
+
+
+
+
+int RunCPU (CPU *softCPU) {
+    assert (softCPU);
+
+    double topVal = 0;
+    double prevTopVal = 0;
+
+    int index = 0;
+    int shift = 0;
+    double val = 0;
+
+    while (1) {
+        int cmd = *(softCPU->machineCode + softCPU->ip) & 0x1F;
+        int type = *(unsigned char *)(softCPU->machineCode + softCPU->ip) & 0xE0;
+
+        softCPU->ip++;
+
+        switch (cmd) {
+        case CMD_PUSH:
+            if (type & 0x20 && !(type & 0x40) && !(type & 0x80)) { // ob binary code
+                softCPU->ip++;
+                val = *(double *)(softCPU->machineCode + softCPU->ip);
+
+                PushStack (softCPU->st, val);
+
+                softCPU->ip += sizeof (double);
+            }
+
+            else if (type & 0x40 && type & 0x80 == 0) {
+                softCPU->ip++;
+
+                int reg = *(char *)(softCPU->machineCode + softCPU->ip);
+
+                double valueOfReg = GetRegValue (reg, softCPU);
+
+                PushStack (softCPU->st, valueOfReg);
+
+                softCPU->ip++;
+            }
+
+            else if (type & 0x80 && type & 0x40 == 0 && type & 0x20 == 0) {
+
+                softCPU->ip++;
+
+                shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip += 2;
+
+                if (shift > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = softCPU->RAM [shift];
+
+                PushStack (softCPU->st, val);
+
+            }
+
+            else if (type & 0x80 && type & 0x40 && type & 0x20 == 0) {
+
+                softCPU->ip++;
+
+                int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip++;
+
+                int index = GetRegValue (typeOfReg, softCPU);
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = softCPU->RAM [index];
+
+                PushStack (softCPU->st, val);
+
+            }
+
+            if (type & 0x80 && type & 0x40 && type & 0x20) {
+                softCPU->ip++;
+
+                int typeOfReg = *(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip ++;
+
+                double regValue = GetRegValue (typeOfReg, softCPU);
+
+                int shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+                softCPU->ip += 2;
+
+                int index = (int)regValue + shift; 
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = softCPU->RAM[index];
+
+                PushStack (softCPU->st, val);      
+            }
+            break;
+
+        case CMD_POP: 
+            if ((type & 0x20) && !(type & 0x40) && !(type & 0x80)) {
+                softCPU->ip++;
+                
+                PopStack (softCPU->st);
+                
+                break;
+            }
+
+            if (type & 0x40 && !(type & 0x80) && !(type & 0x40)) {
+                softCPU->ip++;
+
+                int reg = *(char *)(softCPU->machineCode + softCPU->ip);
+
+                double val = PopStack (softCPU->st); // define PopStack
+
+                int res = WriteToRegister (reg, softCPU, val);
+
+                if (res == UNKNOWN_REGISTER) {
+                    return UNKNOWN_REGISTER;
+                }
+
+                softCPU->ip++;
+                break;
+            }
+
+            if (type & 0x80 && !(type & 0x40)) {
+                softCPU->ip++;
+
+                int shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip += 2;
+
+                if (shift > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = PopStack (softCPU->st);
+
+                softCPU->RAM [shift] = val;
+
+            }
+
+            if ((type & 0x80) && (type & 0x40) && !(type & 0x20)) {
+                softCPU->ip++;
+
+                int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);
+
+                softCPU->ip++;
+
+                int index = GetRegValue (typeOfReg, softCPU);
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = PopStack (softCPU->st);
+
+                softCPU->RAM [index] = val;           
+            }
+
+            if (type & 0x80 && type & 0x40 && type & 0x20) {
+                softCPU->ip++;
+
+                int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);
+                if (typeOfReg == UNKNOWN_REGISTER) {
+                    return UNKNOWN_REGISTER;
+                }
+
+                softCPU->ip ++;
+
+                int regValue = GetRegValue (typeOfReg, softCPU);
+
+                int shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);
+                softCPU->ip += 2;
+
+                int index = (int)regValue + shift; 
+
+                if (index > RAMVOLUME) {
+                    return WRONG_ADDRESS;
+                }
+
+                double val = PopStack (softCPU->st);
+
+                softCPU->RAM [index] = val;           
+            }
+            break; 
+
+        case CMD_ADD: 
+            topVal = PopStack (softCPU->st);
+            prevTopVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, topVal + prevTopVal);
+
+            softCPU->ip++;
+
+            break;
+
+        case CMD_SUB:
+            topVal = PopStack (softCPU->st);
+            prevTopVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, topVal - prevTopVal);
+
+            softCPU->ip++;
+
+            break;     
+
+        case CMD_IN:
+            printf ("Enter the value: ");
+            scanf ("%lg", &val);
+
+            PushStack (softCPU->st, val);
+
+            softCPU->ip++;
+
+            break;    
+
+        case CMD_MUL:
+            topVal = PopStack (softCPU->st);
+            prevTopVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, topVal * prevTopVal);
+
+            softCPU->ip++;
+
+            break; 
+
+        case CMD_DIV:
+            topVal = PopStack (softCPU->st);
+            prevTopVal = PopStack (softCPU->st);
+
+            if (prevTopVal != 0) {
+
+                PushStack (softCPU->st, topVal / prevTopVal);
+
+                softCPU->ip++;
+            } else {
+                return ZERO_DIV;
+            }
+
+            break;
+
+        case CMD_SQRT:
+            topVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, sqrt (topVal));
+
+            softCPU->ip++;
+
+            break; 
+
+        case CMD_SIN:
+            topVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, sin (topVal));
+
+            softCPU->ip++;
+
+            break; 
+
+        case CMD_COS:
+            topVal = PopStack (softCPU->st);
+
+            PushStack (softCPU->st, cos (topVal));
+
+            softCPU->ip++;
+
+            break; 
+
+        case CMD_OUT: 
+            printf ("Top value of CPU stack: %lg\n", PopStack (softCPU->st));
+
+            softCPU->ip++;
+
+            break;
+
+        case CMD_HLT: 
+            printf ("Program has been finished!\n");
+            return CMD_HLT;
+
+        
+        default:
+            break;
+        }
+        
+    }
+
+    return OK;
+
+}
