@@ -545,3 +545,310 @@ int RunCPU (CPU *softCPU) {
     return OK;
 
 }
+
+
+
+
+
+
+
+факториал через цикл
+
+
+
+
+
+in
+pop ax
+push ax
+
+:fact
+
+dec
+pop bx
+push bx
+
+push ax
+
+mul
+
+pop ax
+
+push bx
+
+push 1
+
+push bx
+
+ja :fact
+
+push ax
+
+out
+
+
+
+
+
+
+hlt
+
+
+
+
+
+
+
+факториал через рекурсию
+
+in
+pop bx
+push bx
+
+call :fact
+
+out
+
+hlt
+
+:fact
+
+dec
+pop cx
+push cx
+pop ax
+push ax
+
+push 1
+push cx
+
+
+jne :name
+
+push cx
+
+inc
+
+pop cx
+
+push cx
+
+push ax
+
+mul
+
+pop ax
+
+push ax
+
+ret
+
+
+
+
+:name
+
+call :fact
+
+ret
+
+
+
+
+
+
+
+
+
+
+
+
+in
+pop ax
+in
+pop bx
+in
+pop cx
+
+push 0
+push ax
+
+je :linearAZero
+
+out
+
+hlt
+
+:linear
+
+push bx
+
+push -1
+push cx
+mul
+
+div
+
+ret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const char N_HLT [] = "hlt"; // const
+static char N_PUSH [] = "push"; // N_PUSH new naming
+static char N_POP [] = "pop";
+static char N_ADD [] = "add";
+static char N_MUL [] = "mul";
+static char N_SUB [] = "sub";
+static char N_OUT [] = "out";
+static char N_IN [] = "in";
+static char N_SQRT [] = "sqrt";
+static char N_DIV [] = "div";
+static char N_COS [] = "cos";
+static char N_SIN [] = "sin";
+static char N_JMP [] = "jmp";
+static char N_DEC [] = "dec";
+
+static char N_AX [] = "ax";
+static char N_BX [] = "bx";
+static char N_CX [] = "cx";
+static char N_DX [] = "dx";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+in
+pop ax
+in
+pop bx
+in
+pop cx
+
+push 0
+push ax
+
+je :lineara
+
+push 0
+push cx
+
+je :linearc
+
+call :square
+
+
+hlt
+
+:lineara
+
+push bx
+
+push -1
+push cx
+mul
+
+div
+
+push 1
+
+out
+
+out
+
+
+ret
+
+
+:linearc
+
+
+push ax
+
+push -1
+push bx
+mul
+
+div
+
+push 0
+
+push 2
+
+out
+out
+out
+
+hlt
+
+ret
+
+:square
+
+push 0
+
+push ax
+push cx
+push 4
+mul
+mul
+
+push bx
+push bx
+mul
+
+sub
+
+pop dx
+push dx
+
+jb :noroots
+
+:noroots
+
+push 0
+
+out
+
+hlt
+
+ret
+
+
+
+
+

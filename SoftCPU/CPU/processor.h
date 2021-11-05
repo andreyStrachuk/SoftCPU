@@ -7,16 +7,18 @@
 
 struct CPU {
     Stack *st;
+    Stack *call;
 
     double ax;
     double bx;
     double cx;
     double dx;
 
-    char *machineCode;
     double *RAM;
 
     int ip;
+
+    char *machineCode;
 };
 
 #endif

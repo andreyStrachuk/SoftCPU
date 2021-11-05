@@ -1,8 +1,8 @@
-DEF_REG_ (AX, 0x01)
+DEF_REG_ (ax, 0x01)
 
-DEF_REG_ (BX, 0x02)
+DEF_REG_ (bx, 0x02)
 
-DEF_REG_ (CX, 0x03)
+DEF_REG_ (cx, 0x03)
 
-DEF_REG_ (DX, 0x04)
+DEF_REG_ (dx, 0x04)
 

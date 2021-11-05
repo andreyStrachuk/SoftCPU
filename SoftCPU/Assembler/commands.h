@@ -1,25 +1,8 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-static const char N_HLT [] = "hlt"; // const
-static char N_PUSH [] = "push"; // N_PUSH new naming
-static char N_POP [] = "pop";
-static char N_ADD [] = "add";
-static char N_MUL [] = "mul";
-static char N_SUB [] = "sub";
-static char N_OUT [] = "out";
-static char N_IN [] = "in";
-static char N_SQRT [] = "sqrt";
-static char N_DIV [] = "div";
-static char N_COS [] = "cos";
-static char N_SIN [] = "sin";
-static char N_JMP [] = "jmp";
-static char N_DEC [] = "dec";
-
-static char N_AX [] = "ax";
-static char N_BX [] = "bx";
-static char N_CX [] = "cx";
-static char N_DX [] = "dx";
+extern char N_PUSH [];
+extern char N_POP []; 
 
 enum TYPEOFREGISTER {
     #define DEF_REG_(name, number) R_##name = number,
@@ -54,7 +37,9 @@ enum TYPEOFWRITE {
     NTHG,
     IMM,
     REG,
-    MEM
+    MEM,
+    MEMREG,
+    MEMREGIMM
 };
 
 enum ERRORS {
@@ -65,7 +50,9 @@ enum ERRORS {
     ZERO_DIV = -6,
     WRONG_ADDRESS = -5,
     FIRST,
-    SECOND
+    SECOND,
+    NULLPTR,
+    UNABLETOREADFROMFILE
 };
 
 #endif

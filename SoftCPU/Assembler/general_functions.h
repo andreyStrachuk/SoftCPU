@@ -36,6 +36,16 @@
                                                             continue; \
                                                         }
 
+#define ReadCmdsAndWrite(code, cmds, numOfStrings, lbls, labelIp)   result = ReadCmdAndWrite (code, cmds, numOfStrings, lbls, FIRST, &labelIp);     \
+                                                                    result = ReadCmdAndWrite (code, cmds, numOfStrings, lbls, SECOND, &labelIp);    \
+                                                                    if (result != OK) {                                                             \
+                                                                        PrintErrors (result);                                                       \
+                                                                    }               
+                                                                    
+#define ASSERT_OKAY(smth, code)    if (smth) code                                     \
+
+#define STR_EQ(str1, str2)   (strcmp (str1, str2) == 0) 
+
 struct Line {
     char *str;
     int length;
@@ -71,10 +81,8 @@ int CheckIfLabel (char *src, Label *lbls, int *labelIp, int sizeOfCodeArr);
 
 Line *GetLine (char *src, Line *cmdLine);
 
-void InitializeArrOfLabels (Label *lbls);
-
-int FindLabelIndex (Label *lbls, char *src, int labelIp);
-
 int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp);
+
+void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, int labelIp);
 
 #endif

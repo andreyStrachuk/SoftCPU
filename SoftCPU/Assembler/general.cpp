@@ -57,7 +57,7 @@ int NumberOfStrings (FILE *asmProgram) {
     return number;
 }
 
-#define DEF_CMD_(name, number, argNumber, code)  if (strcmp (#name, src) == 0) { \
+#define DEF_CMD_(name, number, argNumber, code)  if (STR_EQ (src, #name)) { \
                                     return CMD_##name; \
                                 } \
 
@@ -71,7 +71,7 @@ int DetectCommand (char *src) { //!TODO strncmp
     return UNKNOWN_COMMAND;
 }
 
-#define DEF_REG_(name, number)  if (strcmp (N_##name, src) == 0) { \
+#define DEF_REG_(name, number)  if (STR_EQ (#name, src) == 0) { \
                                     return R_##name; \
                                 } \
 
@@ -95,11 +95,11 @@ char *SkipArg (char *src) {
 
 #define DEF_CMD_(name, cmdNumb, argNumber, code)                                                                    \
             if (typeOfCmd == cmdNumb) {                                                                             \
-                src = SkipSpaceSymbols (src);                                                     \
+                src = SkipSpaceSymbols (src);                                                                       \
                                                                                                                     \
                 switch (argNumber) {                                                                                \
                     case 0: {                                                                                       \
-                        if (*src == ';' ||  *src == '\0') {                                   \
+                        if (*src == ';' ||  *src == '\0') {                                                         \
                                                                                                                     \
                             FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);                                      \
                                                                                                                     \
@@ -113,17 +113,17 @@ char *SkipArg (char *src) {
                                                                                                                     \
                     case 1: {                                                                                       \
                         if (typeOfCmd == CMD_pop || typeOfCmd == CMD_push) {                                        \
-                            if (*src == ';' ||  *src == '\0') {                               \
+                            if (*src == ';' ||  *src == '\0') {                                                     \
                                 FillBitField (cmdNum, cmdNumber, typeOfCmd, IMM);                                   \
                                 machineCode [sizeOfCodeArr++] = cmdNumber;                                          \
                                 continue;                                                                           \
                             }                                                                                       \
                                                                                                                     \
-                            resOfScan = sscanf (src, "%lg", &arg);                                         \
+                            resOfScan = sscanf (src, "%lg", &arg);                                                  \
                                                                                                                     \
                             if (resOfScan != 0) {                                                                   \
-                                src = SkipReadWord (src);                                         \
-                                ASSERT_CORRECT (src);                                                              \
+                                src = SkipReadWord (src);                                                           \
+                                ASSERT_CORRECT (src);                                                               \
                                                                                                                     \
                                 FillBitField (cmdNum, cmdNumber, typeOfCmd, IMM);                                   \
                                                                                                                     \
@@ -136,11 +136,11 @@ char *SkipArg (char *src) {
                                                                                                                     \
                             int shift = 0;                                                                          \
                             int ok = 0;                                                                             \
-                            resOfScan = sscanf (src, "[%d]%n", &shift, &ok);                               \
+                            resOfScan = sscanf (src, "[%d]%n", &shift, &ok);                                        \
                                                                                                                     \
                             if (ok >= 3) {                                                                          \
-                                src = SkipReadWord (src);                                         \
-                                ASSERT_CORRECT (src);                                                              \
+                                src = SkipReadWord (src);                                                           \
+                                ASSERT_CORRECT (src);                                                               \
                                                                                                                     \
                                 FillBitField (cmdNum, cmdNumber, typeOfCmd, MEM);                                   \
                                                                                                                     \
@@ -149,11 +149,11 @@ char *SkipArg (char *src) {
                                                                                                                     \
                                 continue;                                                                           \
                             }                                                                                       \
-                            resOfScan = sscanf (src, "[%d+%2s]%n", &shift, reg, &ok);                      \
+                            resOfScan = sscanf (src, "[%d+%2s]%n", &shift, reg, &ok);                               \
                                                                                                                     \
                             if (ok >= 6) {                                                                          \
-                                src = SkipReadWord (src);                                         \
-                                ASSERT_CORRECT (src);                                                              \
+                                src = SkipReadWord (src);                                                           \
+                                ASSERT_CORRECT (src);                                                               \
                                                                                                                     \
                                 typeOfReg = DetectRegister (reg);                                                   \
                                 if (typeOfReg == UNKNOWN_REGISTER) {                                                \
@@ -171,11 +171,11 @@ char *SkipArg (char *src) {
                                 continue;                                                                           \
                             }                                                                                       \
                                                                                                                     \
-                            resOfScan = sscanf (src, "[%2s]%n", reg, &ok);                                 \
+                            resOfScan = sscanf (src, "[%2s]%n", reg, &ok);                                          \
                                                                                                                     \
                             if (ok == 4) {                                                                          \
-                                src = SkipReadWord (src);                                         \
-                                ASSERT_CORRECT (src);                                                              \
+                                src = SkipReadWord (src);                                                           \
+                                ASSERT_CORRECT (src);                                                               \
                                                                                                                     \
                                 typeOfReg = DetectRegister (reg);                                                   \
                                 if (typeOfReg == UNKNOWN_REGISTER) {                                                \
@@ -191,7 +191,7 @@ char *SkipArg (char *src) {
                                 continue;                                                                           \
                             }                                                                                       \
                                                                                                                     \
-                            resOfScan = sscanf (src, "%2s", reg);                                           \
+                            resOfScan = sscanf (src, "%2s", reg);                                                   \
                             if (resOfScan == 0) {                                                                   \
                                 return INCORRECT_INPUT;                                                             \
                             }                                                                                       \
@@ -201,8 +201,8 @@ char *SkipArg (char *src) {
                                 return UNKNOWN_REGISTER;                                                            \
                             }                                                                                       \
                                                                                                                     \
-                            src = SkipReadWord (src);                                             \
-                            ASSERT_CORRECT (src);                                                                  \
+                            src = SkipReadWord (src);                                                               \
+                            ASSERT_CORRECT (src);                                                                   \
                                                                                                                     \
                             FillBitField (cmdNum, cmdNumber, typeOfCmd, REG);                                       \
                                                                                                                     \
@@ -211,22 +211,23 @@ char *SkipArg (char *src) {
                             continue;                                                                               \
                         }                                                                                           \
                         else {                                                                                      \
-                            if (*src != ':') return INCORRECT_INPUT;                                     \
-                            src++;                                                                         \
+                            if (*src != ':') return INCORRECT_INPUT;                                                \
+                            src++;                                                                                  \
                             FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);                                      \
                                                                                                                     \
                             machineCode [sizeOfCodeArr++] = cmdNumber;                                              \
                             int dest = 0;                                                                           \
-                            resOfScan = sscanf (src, "%s", commands);                                      \
+                            resOfScan = sscanf (src, "%s", commands);                                               \
                                                                                                                     \
-                            for (int j = 0; j < *labelIp; j++) {                                                     \
-                                if (strcmp (lbls[j].txt, commands) == 0) {                                          \
+                            for (int j = 0; j < *labelIp; j++) {                                                    \
+                                if (STR_EQ (lbls[j].txt, commands)) {                                          \
                                     dest = (lbls + j)->ip;                                                          \
                                     break;                                                                          \
                                 }                                                                                   \
                             }                                                                                       \
                                                                                                                     \
                             PutInt (dest, machineCode, &sizeOfCodeArr);                                             \
+                            continue;                                                                               \
                         }                                                                                           \
                     }                                                                                               \
                     case 2: {                                                                                       \
@@ -235,29 +236,30 @@ char *SkipArg (char *src) {
                                                                                                                     \
                         src++;                                                                                      \
                                                                                                                     \
-                        int num = 0;                                                                                \
                         resOfScan = sscanf (src, "%s", commands);                                                   \
                         int dest = -1;                                                                              \
                                                                                                                     \
                         for (int i = 0; i < *labelIp; i++) {                                                        \
-                            if (strcmp (lbls[i].txt, commands) == 0) {                                              \
+                            if (STR_EQ (lbls[i].txt, commands)) {                                              \
                                 dest = i;                                                                           \
                                 break;                                                                              \
                             }                                                                                       \
-                        } \
-                        machineCode [sizeOfCodeArr++] = typeOfCmd; \
-                        if (dest != -1) {                                    \
-                                                                              \
-                            PutInt (lbls[dest].ip, machineCode, &sizeOfCodeArr);   \
-                        } \
-                        else { \
-                            PutInt (-1, machineCode, &sizeOfCodeArr); \
-                        }                                              \
+                        }                                                                                           \
+                        machineCode [sizeOfCodeArr++] = typeOfCmd;                                                  \
+                        if (dest != -1) {                                                                           \
+                                                                                                                    \
+                            PutInt (lbls[dest].ip, machineCode, &sizeOfCodeArr);                                    \
+                        }                                                                                           \
+                        else {                                                                                      \
+                            PutInt (-1, machineCode, &sizeOfCodeArr);                                               \
+                        }                                                                                           \
                                                                                                                     \
                         continue;                                                                                   \
                     }                                                                                               \
+                    default : {                                                                                     \
+                        return INCORRECT_INPUT;                                                                     \
+                    }                                                                                               \
                 }                                                                                                   \
-                continue;                                                                                           \
             }
 
 
@@ -287,8 +289,8 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings, Label *lbls, in
         }
 
         resOfScan = sscanf (src, "%s", commands);
-
         typeOfCmd = DetectCommand (commands);
+
         if (typeOfCmd == UNKNOWN_COMMAND) {
             return UNKNOWN_COMMAND;
         }
@@ -340,17 +342,32 @@ void InitializeArrOfPointers (Line **cmds, char *src, int numberOfStrings) {
 void PrintErrors (int typeOfError) {
     switch (typeOfError) {
         case UNKNOWN_COMMAND : {
-            printf ("Error!\nUnknown command!\n");
+            printf ("Unknown command!\nError code: %d\n", typeOfError);
             break;
         }
         
         case UNKNOWN_REGISTER : {
-            printf ("Error!\nUnknown register!\n");
+            printf ("Unknown register!\nError code: %d\n", typeOfError);
             break;
         }
-
+        case ZERO_DIV: {
+            printf ("Value is divided by ZERO!\nError code: %d\n", typeOfError);
+            break;
+        }  
+        case WRONG_ADDRESS: {
+            printf ("Invalid addres!\nError code: %d\n", typeOfError);
+            break;
+        }
         case INCORRECT_INPUT : {
-            printf ("Error!\nIncorrect input!\n");
+            printf ("Incorrect input!\nError code: %d\n", typeOfError);
+            break;
+        }
+        case UNABLETOREADFROMFILE : {
+            printf ("Unable to read from file!\nError code: %d\n", typeOfError);
+            break;
+        }
+        case NULLPTR : {
+            printf ("Null pointer!\nError code: %d", typeOfError);
             break;
         }
         case OK : {
@@ -367,7 +384,7 @@ void PrintErrors (int typeOfError) {
 void PutDouble (double value, char *ptr, int *sizeOfArr) {
     char *p = (char *)(&value);
 
-    for (int i = 0; i < sizeof value; i++) {
+    for (int i = 0; i < (int)sizeof value; i++) {
         *(ptr + *sizeOfArr) = *p;
         p++;
         (*sizeOfArr)++;
@@ -410,31 +427,6 @@ int CheckIfLabel (char *src, Label *lbls, int *labelIp, int sizeOfCodeArr) {
     return 0;
 }
 
-void InitializeArrOfLabels (Label *lbls) {
-    assert (lbls);
-
-    for (int i = 0; i < NUMBEROFLABELS; i++) {
-        lbls[i].ip = -2;
-    }
-
-}
-
-int FindLabelIndex (Label *lbls, char *src, int labelIp) {
-    assert (lbls);
-    assert (src);
-
-    int dest = -3;
-
-    for (int i = 0; i < labelIp; i++) {
-        if (strcmp (src, lbls[i].txt) == 0) {
-            dest = i;
-            break;
-        }
-    }
-
-    return dest;
-}
-
 int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp) {
     assert (lbls);
     assert (src);
@@ -442,11 +434,28 @@ int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp) {
     int dest = -1;
 
     for (int i = 0; i < labelIp; i++) {
-        if (strcmp (lbls[i].txt, src) == 0) {
+        if (STR_EQ (lbls[i].txt, src) == 0) {
             dest = i;
             break;
         } 
     }
 
     return dest;
+}
+
+void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, int labelIp) {
+    assert (asmProg);
+    assert (cmds);
+    assert (lbls);
+    
+    for (int i = 0; i < numOfStrings; i++) {
+        free (cmds[i]);
+    }
+
+    for (int i = 0; i < labelIp; i++) {
+        free (lbls[i].txt);
+    }
+
+    free (cmds);
+    free (lbls);
 }
