@@ -77,7 +77,7 @@ int CheckIfMem (const int type) {
     return 0;
 }
 
-#define DEF_CMD_(name, cmdNumb, argNumber, code)                                                        \
+#define DEF_CMD_(name, cmdNumb, argNumber, code, function)                                                        \
                     case CMD_##name: {                                                                  \
                         switch (argNumber) {                                                            \
                             case 0:                                                                     \
@@ -86,7 +86,7 @@ int CheckIfMem (const int type) {
                             case 1: {                                                                   \
                                 res = CheckIfImm (type);                                                \
                                 if (res == IMM) {                                                       \
-                                    if (STR_EQ (#name, N_PUSH)) {                                  \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
                                         val = *(double *)(softCPU->machineCode + softCPU->ip);          \
                                                                                                         \
                                         code                                                            \
@@ -94,7 +94,7 @@ int CheckIfMem (const int type) {
                                         softCPU->ip += sizeof (double);                                 \
                                         continue;                                                       \
                                     }                                                                   \
-                                    if (STR_EQ (#name, N_POP)) {                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
                                         PopStack (softCPU->st);                                         \
                                     }                                                                   \
                                     continue;                                                           \
@@ -104,13 +104,13 @@ int CheckIfMem (const int type) {
                                 if (res == REG) {                                                       \
                                     int reg = *(char *)(softCPU->machineCode + softCPU->ip);            \
                                     softCPU->ip++;                                                      \
-                                    if (STR_EQ (#name, N_PUSH)) {                                  \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
                                                                                                         \
                                         val = GetRegValue (reg, softCPU);                               \
                                                                                                         \
                                         PushStack (softCPU->st, val);                                   \
                                     }                                                                   \
-                                    if (STR_EQ (#name, N_POP)) {                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
                                                                                                         \
                                         val = PopStack (softCPU->st);                                   \
                                                                                                         \
@@ -132,13 +132,13 @@ int CheckIfMem (const int type) {
                                     if (shift > RAMVOLUME) {                                            \
                                         return WRONG_ADDRESS;                                           \
                                     }                                                                   \
-                                    if (STR_EQ (#name, N_PUSH)) {                                  \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
                                                                                                         \
                                         val = softCPU->RAM [shift];                                     \
                                                                                                         \
                                         PushStack (softCPU->st, val);                                   \
                                     }                                                                   \
-                                    if (STR_EQ (#name, N_POP)) {                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
                                                                                                         \
                                         val = PopStack (softCPU->st);                                   \
                                                                                                         \
@@ -157,12 +157,12 @@ int CheckIfMem (const int type) {
                                         return WRONG_ADDRESS;                                           \
                                     }                                                                   \
                                                                                                         \
-                                    if (STR_EQ (#name, N_PUSH)) {                                  \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
                                         val = softCPU->RAM [index];                                     \
                                                                                                         \
                                         PushStack (softCPU->st, val);                                   \
                                     }                                                                   \
-                                    if (STR_EQ (#name, N_POP)) {                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
                                         val = PopStack (softCPU->st);                                   \
                                                                                                         \
                                         softCPU->RAM [index] = val;                                     \

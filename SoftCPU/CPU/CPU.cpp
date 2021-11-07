@@ -17,7 +17,7 @@ int main () {
     InitStack (softCPU.st);
     InitStack (softCPU.call);
 
-    FILE *code = fopen ("../Assembler/code.bin", "rb");
+    FILE *code = fopen ("Assembler/code.bin", "rb");
     ASSERT_OKAY (code == nullptr, PrintErrors (NULLPTR));
 
     int fileSize = GetFileSize (code);

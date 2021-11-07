@@ -57,7 +57,7 @@ int NumberOfStrings (FILE *asmProgram) {
     return number;
 }
 
-#define DEF_CMD_(name, number, argNumber, code)  if (STR_EQ (src, #name)) { \
+#define DEF_CMD_(name, number, argNumber, code, function)  if (STR_EQ (src, #name)) { \
                                     return CMD_##name; \
                                 } \
 
@@ -71,7 +71,7 @@ int DetectCommand (char *src) { //!TODO strncmp
     return UNKNOWN_COMMAND;
 }
 
-#define DEF_REG_(name, number)  if (STR_EQ (#name, src) == 0) { \
+#define DEF_REG_(name, number)  if (STR_EQ (#name, src)) { \
                                     return R_##name; \
                                 } \
 
@@ -93,7 +93,7 @@ char *SkipArg (char *src) {
     return src;
 }
 
-#define DEF_CMD_(name, cmdNumb, argNumber, code)                                                                    \
+#define DEF_CMD_(name, cmdNumb, argNumber, code, function)                                                                    \
             if (typeOfCmd == cmdNumb) {                                                                             \
                 src = SkipSpaceSymbols (src);                                                                       \
                                                                                                                     \
@@ -104,155 +104,24 @@ char *SkipArg (char *src) {
                             FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);                                      \
                                                                                                                     \
                             machineCode [sizeOfCodeArr++] = cmdNumber;                                              \
-                            break;                                                                                  \
+                            continue;                                                                                  \
                         }                                                                                           \
                         else {                                                                                      \
                             return INCORRECT_INPUT;                                                                 \
                         }                                                                                           \
+                        continue;                                                                                      \
                     }                                                                                               \
                                                                                                                     \
                     case 1: {                                                                                       \
-                        if (typeOfCmd == CMD_pop || typeOfCmd == CMD_push) {                                        \
-                            if (*src == ';' ||  *src == '\0') {                                                     \
-                                FillBitField (cmdNum, cmdNumber, typeOfCmd, IMM);                                   \
-                                machineCode [sizeOfCodeArr++] = cmdNumber;                                          \
-                                continue;                                                                           \
-                            }                                                                                       \
                                                                                                                     \
-                            resOfScan = sscanf (src, "%lg", &arg);                                                  \
-                                                                                                                    \
-                            if (resOfScan != 0) {                                                                   \
-                                src = SkipReadWord (src);                                                           \
-                                ASSERT_CORRECT (src);                                                               \
-                                                                                                                    \
-                                FillBitField (cmdNum, cmdNumber, typeOfCmd, IMM);                                   \
-                                                                                                                    \
-                                machineCode [sizeOfCodeArr++] = cmdNumber;                                          \
-                                                                                                                    \
-                                PutDouble (arg, machineCode, &sizeOfCodeArr);                                       \
-                                                                                                                    \
-                                continue;                                                                           \
-                            }                                                                                       \
-                                                                                                                    \
-                            int shift = 0;                                                                          \
-                            int ok = 0;                                                                             \
-                            resOfScan = sscanf (src, "[%d]%n", &shift, &ok);                                        \
-                                                                                                                    \
-                            if (ok >= 3) {                                                                          \
-                                src = SkipReadWord (src);                                                           \
-                                ASSERT_CORRECT (src);                                                               \
-                                                                                                                    \
-                                FillBitField (cmdNum, cmdNumber, typeOfCmd, MEM);                                   \
-                                                                                                                    \
-                                machineCode[sizeOfCodeArr++] = cmdNumber;                                           \
-                                PutInt (shift, machineCode, &sizeOfCodeArr);                                        \
-                                                                                                                    \
-                                continue;                                                                           \
-                            }                                                                                       \
-                            resOfScan = sscanf (src, "[%d+%2s]%n", &shift, reg, &ok);                               \
-                                                                                                                    \
-                            if (ok >= 6) {                                                                          \
-                                src = SkipReadWord (src);                                                           \
-                                ASSERT_CORRECT (src);                                                               \
-                                                                                                                    \
-                                typeOfReg = DetectRegister (reg);                                                   \
-                                if (typeOfReg == UNKNOWN_REGISTER) {                                                \
-                                    return UNKNOWN_REGISTER;                                                        \
-                                }                                                                                   \
-                                                                                                                    \
-                                FillBitField (cmdNum, cmdNumber, typeOfCmd, MEM);                                   \
-                                cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);                                               \
-                                cmdNumber += (2 * 2 * 2 * 2 * 2);                                                   \
-                                                                                                                    \
-                                machineCode[sizeOfCodeArr++] = cmdNumber;                                           \
-                                machineCode[sizeOfCodeArr++] = typeOfReg;                                           \
-                                PutInt (shift, machineCode, &sizeOfCodeArr);                                        \
-                                                                                                                    \
-                                continue;                                                                           \
-                            }                                                                                       \
-                                                                                                                    \
-                            resOfScan = sscanf (src, "[%2s]%n", reg, &ok);                                          \
-                                                                                                                    \
-                            if (ok == 4) {                                                                          \
-                                src = SkipReadWord (src);                                                           \
-                                ASSERT_CORRECT (src);                                                               \
-                                                                                                                    \
-                                typeOfReg = DetectRegister (reg);                                                   \
-                                if (typeOfReg == UNKNOWN_REGISTER) {                                                \
-                                    return UNKNOWN_REGISTER;                                                        \
-                                }                                                                                   \
-                                                                                                                    \
-                                FillBitField (cmdNum, cmdNumber, typeOfCmd, MEM);                                   \
-                                cmdNumber += (2 * 2 * 2 * 2 * 2 * 2);                                               \
-                                                                                                                    \
-                                machineCode[sizeOfCodeArr++] = cmdNumber;                                           \
-                                machineCode[sizeOfCodeArr++] = typeOfReg;                                           \
-                                                                                                                    \
-                                continue;                                                                           \
-                            }                                                                                       \
-                                                                                                                    \
-                            resOfScan = sscanf (src, "%2s", reg);                                                   \
-                            if (resOfScan == 0) {                                                                   \
-                                return INCORRECT_INPUT;                                                             \
-                            }                                                                                       \
-                                                                                                                    \
-                            typeOfReg = DetectRegister (reg);                                                       \
-                            if (typeOfReg == UNKNOWN_REGISTER) {                                                    \
-                                return UNKNOWN_REGISTER;                                                            \
-                            }                                                                                       \
-                                                                                                                    \
-                            src = SkipReadWord (src);                                                               \
-                            ASSERT_CORRECT (src);                                                                   \
-                                                                                                                    \
-                            FillBitField (cmdNum, cmdNumber, typeOfCmd, REG);                                       \
-                                                                                                                    \
-                            machineCode [sizeOfCodeArr++] = cmdNumber;                                              \
-                            machineCode [sizeOfCodeArr++] = typeOfReg;                                              \
-                            continue;                                                                               \
-                        }                                                                                           \
-                        else {                                                                                      \
-                            if (*src != ':') return INCORRECT_INPUT;                                                \
-                            src++;                                                                                  \
-                            FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);                                      \
-                                                                                                                    \
-                            machineCode [sizeOfCodeArr++] = cmdNumber;                                              \
-                            int dest = 0;                                                                           \
-                            resOfScan = sscanf (src, "%s", commands);                                               \
-                                                                                                                    \
-                            for (int j = 0; j < *labelIp; j++) {                                                    \
-                                if (STR_EQ (lbls[j].txt, commands)) {                                          \
-                                    dest = (lbls + j)->ip;                                                          \
-                                    break;                                                                          \
-                                }                                                                                   \
-                            }                                                                                       \
-                                                                                                                    \
-                            PutInt (dest, machineCode, &sizeOfCodeArr);                                             \
-                            continue;                                                                               \
-                        }                                                                                           \
+                            function                                                                                \
+                            continue;                                                                                  \
                     }                                                                                               \
                     case 2: {                                                                                       \
                         FindNextWord (src);                                                                         \
                         if (*src != ':') return INCORRECT_INPUT;                                                    \
                                                                                                                     \
-                        src++;                                                                                      \
-                                                                                                                    \
-                        resOfScan = sscanf (src, "%s", commands);                                                   \
-                        int dest = -1;                                                                              \
-                                                                                                                    \
-                        for (int i = 0; i < *labelIp; i++) {                                                        \
-                            if (STR_EQ (lbls[i].txt, commands)) {                                              \
-                                dest = i;                                                                           \
-                                break;                                                                              \
-                            }                                                                                       \
-                        }                                                                                           \
-                        machineCode [sizeOfCodeArr++] = typeOfCmd;                                                  \
-                        if (dest != -1) {                                                                           \
-                                                                                                                    \
-                            PutInt (lbls[dest].ip, machineCode, &sizeOfCodeArr);                                    \
-                        }                                                                                           \
-                        else {                                                                                      \
-                            PutInt (-1, machineCode, &sizeOfCodeArr);                                               \
-                        }                                                                                           \
+                        function                                                                                    \
                                                                                                                     \
                         continue;                                                                                   \
                     }                                                                                               \
@@ -404,18 +273,19 @@ void PutInt (int value, char *ptr, int *sizeOfArr) {
 int CheckIfLabel (char *src, Label *lbls, int *labelIp, int sizeOfCodeArr) {
     if (*src == ':') {
         src++;
-
-        char commands [10] = {};
+        char str[10] = {0};
         int n = 0;
 
-        sscanf (src, "%s%n", commands, &n);
+        sscanf (src, "%s%n", str, &n);
 
-        int res = CheckIfLabelContainsStr (lbls, commands, *labelIp);
-        if (res != -1) return OK;
+        int res = CheckIfLabelContainsStr (lbls, str, *labelIp);
+        if (res != -1) {
+            return OK;
+        }
 
-        (*(lbls + *labelIp)).txt = (char *)calloc (n, sizeof (char));
+        (lbls + *labelIp)->txt = (char *)calloc (n, sizeof (char)); 
 
-        memcpy ((*(lbls + *labelIp)).txt, commands, n);
+        strncpy ((*(lbls + *labelIp)).txt, str, n);
 
         (*(lbls + *labelIp)).ip = sizeOfCodeArr;
 
@@ -434,7 +304,7 @@ int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp) {
     int dest = -1;
 
     for (int i = 0; i < labelIp; i++) {
-        if (STR_EQ (lbls[i].txt, src) == 0) {
+        if (STR_EQ (lbls[i].txt, src)) {
             dest = i;
             break;
         } 
@@ -458,4 +328,121 @@ void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, int lab
 
     free (cmds);
     free (lbls);
+}
+
+int ArrangeCmd (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr) {
+  
+    double arg = 0;
+    int resOfScan = sscanf (src, "%lg", &arg); 
+    struct COMMAND field = {};    
+    unsigned char cmdNumber = 0;       
+    char reg[5] = {};
+    int typeOfReg = 0;
+
+    if (typeOfCmd == CMD_pop && (*src == ';' ||  *src == '\0')) {
+        FillBitField (field, cmdNumber, typeOfCmd, IMM);
+        machineCode [(*sizeOfCodeArr)++] = cmdNumber;
+        return OK;
+    }                           
+                                                                                                                    
+    if (resOfScan != 0) {                                                                   
+        src = SkipReadWord (src);                                                           
+        ASSERT_CORRECT (src);                                                               
+                                                                                                                    
+        FillBitField (field, cmdNumber, typeOfCmd, IMM);                                   
+                                                                                                                    
+        machineCode [(*sizeOfCodeArr)++] = cmdNumber;                                          
+                                                                                                                    
+        PutDouble (arg, machineCode, sizeOfCodeArr);
+
+        return OK;                                                                   
+    }
+
+    int shift = 0;
+    int ok = 0;
+    resOfScan = sscanf (src, "[%d]%n", &shift, &ok);                         
+                                                                                                    
+    if (ok >= 3) {                                                                          
+        src = SkipReadWord (src);                                                           
+        ASSERT_CORRECT (src);                                                               
+                                                                                            
+        FillBitField (field, cmdNumber, typeOfCmd, MEM);                                  
+                                                                                            
+        machineCode[(*sizeOfCodeArr)++] = cmdNumber;                                          
+        PutInt (shift, machineCode, sizeOfCodeArr);    
+
+        return OK;                                                                     
+    }
+
+    resOfScan = sscanf (src, "[%d+%2s]%n", &shift, reg, &ok);                               
+                                                                                                                    
+    if (ok >= 6) {                                                                          
+        src = SkipReadWord (src);                                                           
+        ASSERT_CORRECT (src);                                                               
+                                                                                            
+        DetectReg (reg);                                                                    
+                                                                                            
+        FillBitField (field, cmdNumber, typeOfCmd, MEMREGIMM);                             
+                                                                                            
+        machineCode[(*sizeOfCodeArr)++] = cmdNumber;                                        
+        machineCode[(*sizeOfCodeArr)++] = typeOfReg;                                        
+        PutInt (shift, machineCode, sizeOfCodeArr);                                        
+                                                                                           
+        return OK;                                                                         
+    }
+
+    resOfScan = sscanf (src, "[%s]%n", reg, &ok);                                          
+                                                                                                                    
+    if (ok == 4) {                                                                          
+        src = SkipReadWord (src);                                                           
+        ASSERT_CORRECT (src);                                                               
+                                                                                            
+        DetectReg (reg);                                                                  
+                                                                                        
+        FillBitField (field, cmdNumber, typeOfCmd, MEMREG);                                
+                                                                                            
+        machineCode[(*sizeOfCodeArr)++] = cmdNumber;                                           
+        machineCode[(*sizeOfCodeArr)++] = typeOfReg;                                           
+                                                                                            
+        return OK;                                                                           
+    }
+
+    resOfScan = sscanf (src, "%2s", reg);                                                   
+    ASSERT_OKAY (resOfScan == 0, return UNKNOWN_REGISTER;)                                                                                       
+                                                                                            
+    DetectReg (reg);                                                                        
+                                                                                            
+    src = SkipReadWord (src);                                                               
+    ASSERT_CORRECT (src);                                                                   
+                                                                                            
+    FillBitField (field, cmdNumber, typeOfCmd, REG);                                       
+                                                                                            
+    machineCode [(*sizeOfCodeArr)++] = cmdNumber;                                              
+    machineCode [(*sizeOfCodeArr)++] = typeOfReg;                                              
+    return OK;
+
+}
+
+int ArrangeJmpsCall (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr, Label *lbls, int *labelIp) {
+    int dest = -1;
+    char commands [10] = {};
+
+    src++;                                                                                            
+    int resOfScan = sscanf (src, "%s", commands);                                                                            
+                                                                                                
+    for (int i = 0; i < *labelIp; i++) {                                                        
+        if (strcmp (lbls[i].txt, commands) == 0) {                                              
+            dest = i;                                                                           
+            break;                                                                              
+        }                                                                                       
+    }                                                                                           
+    machineCode [(*sizeOfCodeArr)++] = typeOfCmd;                                                  
+    if (dest != -1) {                                                                                                                                                                
+        PutInt (lbls[dest].ip, machineCode, sizeOfCodeArr);                                    
+    }                                                                                           
+    else {                                                                                      
+        PutInt (-1, machineCode, sizeOfCodeArr);                                               
+    }
+
+    return OK;
 }

@@ -6,8 +6,8 @@
 #include "commands.h"
 
 int main () {
-    FILE *asmProgFile = fopen ("program.asm", "rb");
-    FILE *code = fopen ("code.bin", "wb");
+    FILE *asmProgFile = fopen ("Assembler/program.asm", "rb");
+    FILE *code = fopen ("Assembler/code.bin", "wb");
 
     int fileSize = GetFileSize (asmProgFile);
     int numOfStrings = NumberOfStrings (asmProgFile);
@@ -15,16 +15,16 @@ int main () {
     int result = 0;
 
     char *asmProg = (char *)calloc (fileSize, sizeof (char));
-    ASSERT_OK(asmProg == nullptr, PrintErrors (NULLPTR));
+    ASSERT_OKAY(asmProg == nullptr, PrintErrors (NULLPTR));
 
     fileSize = fread (asmProg, sizeof (char), fileSize, asmProgFile);
     fclose (asmProgFile);
 
     Line **cmds = (Line **)calloc (numOfStrings, sizeof (Line *));
-    ASSERT_OK(cmds == nullptr, PrintErrors(NULLPTR)); 
+    ASSERT_OKAY(cmds == nullptr, PrintErrors(NULLPTR)); 
 
     Label *lbls = (Label *)calloc (NUMBEROFLABELS, sizeof (Label));
-    ASSERT_OK(lbls == nullptr, PrintErrors(NULLPTR));
+    ASSERT_OKAY(lbls == nullptr, PrintErrors(NULLPTR));
 
     InitializeArrOfPointers (cmds, asmProg, numOfStrings);
 

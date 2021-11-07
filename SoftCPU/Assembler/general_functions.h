@@ -22,6 +22,8 @@
                                               if (type == IMM) { field.imm = 1;} \
                                               else if (type == REG) { field.reg = 1; } \
                                               else if (type == MEM) { field.mem = 1; } \
+                                              else if (type == MEMREG) { field.mem = 1; field.reg = 1;} \
+                                              else if (type == MEMREGIMM) { field.mem = 1; field.reg = 1; field.imm = 1; } \
                                               field.cmd = command; \
                                               a = field.cmd + field.imm * (2 * 2 * 2 * 2 * 2) + field.reg * (2 * 2 * 2 * 2 * 2 * 2) + field.mem * (2 * 2 * 2 * 2 * 2 * 2 * 2)
 
@@ -37,14 +39,20 @@
                                                         }
 
 #define ReadCmdsAndWrite(code, cmds, numOfStrings, lbls, labelIp)   result = ReadCmdAndWrite (code, cmds, numOfStrings, lbls, FIRST, &labelIp);     \
+                                                                    ASSERT_OKAY (result != OK, PrintErrors (result);) \
                                                                     result = ReadCmdAndWrite (code, cmds, numOfStrings, lbls, SECOND, &labelIp);    \
-                                                                    if (result != OK) {                                                             \
-                                                                        PrintErrors (result);                                                       \
-                                                                    }               
+                                                                    ASSERT_OKAY (result != OK, PrintErrors (result);)  \
                                                                     
 #define ASSERT_OKAY(smth, code)    if (smth) code                                     \
 
+#define DetectReg(reg)          typeOfReg = DetectRegister (reg);                                                   \
+                                if (typeOfReg == UNKNOWN_REGISTER) {                                                \
+                                    return UNKNOWN_REGISTER;                                                        \
+                                }
+
+
 #define STR_EQ(str1, str2)   (strcmp (str1, str2) == 0) 
+        
 
 struct Line {
     char *str;
@@ -84,5 +92,9 @@ Line *GetLine (char *src, Line *cmdLine);
 int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp);
 
 void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, int labelIp);
+
+int ArrangeCmd (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr);
+
+int ArrangeJmpsCall (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr, Label *lbls, int *labelIp);
 
 #endif

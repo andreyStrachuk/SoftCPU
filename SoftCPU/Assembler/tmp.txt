@@ -852,3 +852,99 @@ ret
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void IfImm (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr) {
+    double arg = 0;
+    int resOfScan = sscanf (src, "%lg", &arg); 
+    struct COMMAND field = {};    
+    unsigned char cmdNumber = 0;                                             
+                                                                                                                    
+    if (resOfScan != 0) {                                                                   
+        src = SkipReadWord (src);                                                           
+        ASSERT_CORRECT (src);                                                               
+                                                                                                                    
+        FillBitField (field, cmdNumber, typeOfCmd, IMM);                                   
+                                                                                                                    
+        machineCode [sizeOfCodeArr++] = cmdNumber;                                          
+                                                                                                                    
+        PutDouble (arg, machineCode, &sizeOfCodeArr);                                                                      
+    }   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+in
+
+push 1
+pop ax
+
+call :fact
+
+out
+
+hlt
+
+:fact
+
+dec
+pop cx
+push cx
+
+
+push cx
+
+push 1
+
+
+jb :fact
+
+push cx
+
+inc
+
+pop cx
+
+push cx
+
+push ax
+
+mul
+
+pop ax
+
+push ax
+
+ret
+

@@ -26,7 +26,7 @@ struct Label {
 
 enum COMMANDS_NUMBERS {
     
-    #define DEF_CMD_(name, numbOfCmd, argNumber, code)  CMD_##name = numbOfCmd,                                           \
+    #define DEF_CMD_(name, numbOfCmd, argNumber, code, function)  CMD_##name = numbOfCmd,                                           \
 
     #include "commands_def.h"
 
