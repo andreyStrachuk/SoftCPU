@@ -1,16 +1,14 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "general_functions.h"
-#include "commands.h"
 
-int main () {
-    FILE *asmProgFile = fopen ("Assembler/program.asm", "rb");
+int main (int argc, char **argv) {
+    FILE *asmProgFile = fopen (argv [1], "rb");
+    ASSERT_OKAY (asmProgFile == nullptr, {PrintErrors (UNABLETOOPENFILE); return 0;})
+
     FILE *code = fopen ("Assembler/code.bin", "wb");
+    ASSERT_OKAY (code == nullptr, {PrintErrors (UNABLETOOPENFILE); return 0;})
 
     int fileSize = GetFileSize (asmProgFile);
-    int numOfStrings = NumberOfStrings (asmProgFile);
+    int numOfStrings = NumberOfStrings (asmProgFile);   
     int labelIp = 0;
     int result = 0;
 

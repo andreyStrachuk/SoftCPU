@@ -1,7 +1,4 @@
 #include "general_functions.h"
-#include "commands.h"
-
-#include <stdlib.h>
 
 char *SkipSpaceSymbols (char *src) {
     assert (src);
@@ -21,20 +18,6 @@ char *SkipReadWord (char *src) {
     }
 
     return src;
-}
-
-int GetFileSize (FILE *asmProgram) {
-    assert (asmProgram);
-
-    int numberOfSymbols = 0;
-
-    fseek (asmProgram, 0, SEEK_END);
-
-    numberOfSymbols = ftell (asmProgram);
-
-    fseek (asmProgram, 0, SEEK_SET);
-
-    return numberOfSymbols;
 }
 
 int NumberOfStrings (FILE *asmProgram) {
@@ -93,29 +76,24 @@ char *SkipArg (char *src) {
     return src;
 }
 
-#define DEF_CMD_(name, cmdNumb, argNumber, code, function)                                                                    \
+#define DEF_CMD_(name, cmdNumb, argNumber, code, function)                                                          \
             if (typeOfCmd == cmdNumb) {                                                                             \
                 src = SkipSpaceSymbols (src);                                                                       \
                                                                                                                     \
                 switch (argNumber) {                                                                                \
                     case 0: {                                                                                       \
-                        if (*src == ';' ||  *src == '\0') {                                                         \
+                        ASSERT_OKAY (*src != ';' &&  *src != '\0', return INCORRECT_INPUT;)                         \
                                                                                                                     \
-                            FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);                                      \
+                        FillBitField (cmdNum, cmdNumber, typeOfCmd, NTHG);                                          \
                                                                                                                     \
-                            machineCode [sizeOfCodeArr++] = cmdNumber;                                              \
-                            continue;                                                                                  \
-                        }                                                                                           \
-                        else {                                                                                      \
-                            return INCORRECT_INPUT;                                                                 \
-                        }                                                                                           \
-                        continue;                                                                                      \
+                        machineCode [sizeOfCodeArr++] = cmdNumber;                                                  \
+                        continue;                                                                                   \
                     }                                                                                               \
                                                                                                                     \
                     case 1: {                                                                                       \
                                                                                                                     \
                             function                                                                                \
-                            continue;                                                                                  \
+                            continue;                                                                               \
                     }                                                                                               \
                     case 2: {                                                                                       \
                         FindNextWord (src);                                                                         \
@@ -132,7 +110,7 @@ char *SkipArg (char *src) {
             }
 
 
-int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings, Label *lbls, int typeOfCheck, int *labelIp) {
+int ReadCmdAndWrite (FILE *code, Line **cmds, const int numbOfStrings, Label *lbls, const int typeOfCheck, int *labelIp) {
     assert (code);
     assert (cmds);
 
@@ -153,16 +131,12 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings, Label *lbls, in
         FindNextWord (src);
 
         int res = CheckIfLabel (src, lbls, labelIp, sizeOfCodeArr);
-        if (res == OK) {
-            continue;
-        }
+        ASSERT_OKAY (res == OK, continue; )
 
         resOfScan = sscanf (src, "%s", commands);
         typeOfCmd = DetectCommand (commands);
 
-        if (typeOfCmd == UNKNOWN_COMMAND) {
-            return UNKNOWN_COMMAND;
-        }
+        ASSERT_OKAY (typeOfCmd == UNKNOWN_COMMAND, return UNKNOWN_COMMAND;)
 
         src = SkipReadWord (src);
 
@@ -173,6 +147,8 @@ int ReadCmdAndWrite (FILE *code, Line **cmds, int numbOfStrings, Label *lbls, in
     }
 
     if (typeOfCheck == SECOND) {
+        MakeSignature (code, SIGN);
+
         fwrite (machineCode, sizeof (char), sizeOfCodeArr, code);
     }
 
@@ -198,7 +174,10 @@ Line *GetLine (char *src, Line *cmdLine) {
     return cmdLine;
 }
 
-void InitializeArrOfPointers (Line **cmds, char *src, int numberOfStrings) {
+void InitializeArrOfPointers (Line **cmds, char *src, const int numberOfStrings) {
+    assert (cmds);
+    assert (src);
+
     for (int i = 0; i < numberOfStrings; i++) {
         cmds [i] = (Line *) calloc (1, sizeof (Line *));
         assert (cmds [i]);
@@ -208,49 +187,7 @@ void InitializeArrOfPointers (Line **cmds, char *src, int numberOfStrings) {
     }
 }
 
-void PrintErrors (int typeOfError) {
-    switch (typeOfError) {
-        case UNKNOWN_COMMAND : {
-            printf ("Unknown command!\nError code: %d\n", typeOfError);
-            break;
-        }
-        
-        case UNKNOWN_REGISTER : {
-            printf ("Unknown register!\nError code: %d\n", typeOfError);
-            break;
-        }
-        case ZERO_DIV: {
-            printf ("Value is divided by ZERO!\nError code: %d\n", typeOfError);
-            break;
-        }  
-        case WRONG_ADDRESS: {
-            printf ("Invalid addres!\nError code: %d\n", typeOfError);
-            break;
-        }
-        case INCORRECT_INPUT : {
-            printf ("Incorrect input!\nError code: %d\n", typeOfError);
-            break;
-        }
-        case UNABLETOREADFROMFILE : {
-            printf ("Unable to read from file!\nError code: %d\n", typeOfError);
-            break;
-        }
-        case NULLPTR : {
-            printf ("Null pointer!\nError code: %d", typeOfError);
-            break;
-        }
-        case OK : {
-            printf ("Everything is OK!\n");
-            break;
-        }
-
-        default : {
-            printf ("Unknown error!\nError number: %d\n", typeOfError);
-        }
-    }
-}
-
-void PutDouble (double value, char *ptr, int *sizeOfArr) {
+void PutDouble (const double value, char *ptr, int *sizeOfArr) {
     char *p = (char *)(&value);
 
     for (int i = 0; i < (int)sizeof value; i++) {
@@ -260,7 +197,7 @@ void PutDouble (double value, char *ptr, int *sizeOfArr) {
     }
 }
 
-void PutInt (int value, char *ptr, int *sizeOfArr) {
+void PutInt (const int value, char *ptr, int *sizeOfArr) {
     char *p = (char *)(&value);
 
     for (int i = 0; i < 2; i++) {
@@ -270,7 +207,7 @@ void PutInt (int value, char *ptr, int *sizeOfArr) {
     }
 }
 
-int CheckIfLabel (char *src, Label *lbls, int *labelIp, int sizeOfCodeArr) {
+int CheckIfLabel (char *src, Label *lbls, int *labelIp, const int sizeOfCodeArr) {
     if (*src == ':') {
         src++;
         char str[10] = {0};
@@ -297,7 +234,7 @@ int CheckIfLabel (char *src, Label *lbls, int *labelIp, int sizeOfCodeArr) {
     return 0;
 }
 
-int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp) {
+int CheckIfLabelContainsStr (Label *lbls, char *src, const int labelIp) {
     assert (lbls);
     assert (src);
 
@@ -313,7 +250,7 @@ int CheckIfLabelContainsStr (Label *lbls, char *src, int labelIp) {
     return dest;
 }
 
-void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, int labelIp) {
+void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, const int labelIp) {
     assert (asmProg);
     assert (cmds);
     assert (lbls);
@@ -330,7 +267,7 @@ void MemFree (char *asmProg, Line **cmds, int numOfStrings, Label *lbls, int lab
     free (lbls);
 }
 
-int ArrangeCmd (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr) {
+int ArrangeCmd (char *src, const int typeOfCmd, char *machineCode, int *sizeOfCodeArr) {
   
     double arg = 0;
     int resOfScan = sscanf (src, "%lg", &arg); 
@@ -412,7 +349,7 @@ int ArrangeCmd (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr)
                                                                                             
     DetectReg (reg);                                                                        
                                                                                             
-    src = SkipReadWord (src);                                                               
+    src = SkipReadWord (src);                                                             
     ASSERT_CORRECT (src);                                                                   
                                                                                             
     FillBitField (field, cmdNumber, typeOfCmd, REG);                                       
@@ -423,7 +360,7 @@ int ArrangeCmd (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr)
 
 }
 
-int ArrangeJmpsCall (char *src, int typeOfCmd, char *machineCode, int *sizeOfCodeArr, Label *lbls, int *labelIp) {
+int ArrangeJmpsCall (char *src, const int typeOfCmd, char *machineCode, int *sizeOfCodeArr, Label *lbls, int *labelIp) {
     int dest = -1;
     char commands [10] = {};
 
@@ -431,7 +368,7 @@ int ArrangeJmpsCall (char *src, int typeOfCmd, char *machineCode, int *sizeOfCod
     int resOfScan = sscanf (src, "%s", commands);                                                                            
                                                                                                 
     for (int i = 0; i < *labelIp; i++) {                                                        
-        if (strcmp (lbls[i].txt, commands) == 0) {                                              
+        if (STR_EQ (lbls[i].txt, commands)) {                                              
             dest = i;                                                                           
             break;                                                                              
         }                                                                                       
@@ -446,3 +383,12 @@ int ArrangeJmpsCall (char *src, int typeOfCmd, char *machineCode, int *sizeOfCod
 
     return OK;
 }
+
+int MakeSignature (FILE *code, const char *src) {
+    ASSERT_OKAY (code == nullptr, return NULLPTR);
+    ASSERT_OKAY (code == nullptr, return NULLPTR);
+
+    fwrite (src, sizeof (char), 2, code);
+
+    return OK;
+} 

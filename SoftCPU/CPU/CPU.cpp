@@ -1,14 +1,11 @@
 #include "../lib/stack.h"
 #include "../lib/verificator.h"
 #include "../lib/dump.h"
-#include "../lib/unit_tests.h"
-#include "../Assembler/commands.h"
-#include "../Assembler/general_functions.h"
-#include "processor.h"
+#include "../lib/commands.h"
 
 #include "service_functions.h"
 
-int main () {
+int main (int argc, char **argv) {  
     CPU softCPU = {};
 
     softCPU.st = (Stack *)calloc (1, sizeof (Stack));
@@ -17,8 +14,8 @@ int main () {
     InitStack (softCPU.st);
     InitStack (softCPU.call);
 
-    FILE *code = fopen ("Assembler/code.bin", "rb");
-    ASSERT_OKAY (code == nullptr, PrintErrors (NULLPTR));
+    FILE *code = fopen (argv [1], "rb");
+    ASSERT_OKAY (code == nullptr, {PrintErrors (UNABLETOOPENFILE); return 0;})
 
     int fileSize = GetFileSize (code);
 

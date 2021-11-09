@@ -948,3 +948,139 @@ push ax
 
 ret
 
+
+
+
+#define DEF_CMD_(name, cmdNumb, argNumber, code, function)                                                        \
+                    case CMD_##name: {                                                                  \
+                        switch (argNumber) {                                                            \
+                            case 0:                                                                     \
+                                code                                                                    \
+                                continue;                                                               \
+                            case 1: {                                                                   \
+                                res = CheckIfImm (type);                                                \
+                                if (res == IMM) {                                                       \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
+                                        val = *(double *)(softCPU->machineCode + softCPU->ip);          \
+                                                                                                        \
+                                        code                                                            \
+                                                                                                        \
+                                        softCPU->ip += sizeof (double);                                 \
+                                        continue;                                                       \
+                                    }                                                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
+                                        PopStack (softCPU->st);                                         \
+                                    }                                                                   \
+                                    continue;                                                           \
+                                }                                                                       \
+                                                                                                        \
+                                res = CheckIfReg (type);                                                \
+                                if (res == REG) {                                                       \
+                                    int reg = *(char *)(softCPU->machineCode + softCPU->ip);            \
+                                    softCPU->ip++;                                                      \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
+                                                                                                        \
+                                        val = GetRegValue (reg, softCPU);                               \
+                                                                                                        \
+                                        PUSHSTACK();                                   \
+                                    }                                                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
+                                                                                                        \
+                                        val = PopStack (softCPU->st);                                   \
+                                                                                                        \
+                                        res = WriteToRegister (reg, softCPU, val);                      \
+                                                                                                        \
+                                        ASSERT_OKAY (res == UNKNOWN_REGISTER, return UNKNOWN_REGISTER; )\
+                                    }                                                                   \
+                                    continue;                                                           \
+                                }                                                                       \
+                                                                                                        \
+                                res = CheckIfMem (type);                                                \
+                                if (res == MEM) {                                                       \
+                                    shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);         \
+                                                                                                        \
+                                    softCPU->ip += 2;                                                   \
+                                                                                                        \
+                                    if (shift > RAMVOLUME) {                                            \
+                                        return WRONG_ADDRESS;                                           \
+                                    }                                                                   \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
+                                                                                                        \
+                                        val = softCPU->RAM [shift];                                     \
+                                                                                                        \
+                                        PUSHSTACK();                                   \
+                                    }                                                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
+                                                                                                        \
+                                        val = PopStack (softCPU->st);                                   \
+                                                                                                        \
+                                        softCPU->RAM [shift] = val;                                     \
+                                    }                                                                   \
+                                    continue;                                                           \
+                                }                                                                       \
+                                if (res == MEMREG) {                                                    \
+                                    int typeOfReg = *(char *)(softCPU->machineCode + softCPU->ip);      \
+                                                                                                        \
+                                    softCPU->ip++;                                                      \
+                                                                                                        \
+                                    index = GetRegValue (typeOfReg, softCPU);                           \
+                                                                                                        \
+                                    if (index > RAMVOLUME) {                                            \
+                                        return WRONG_ADDRESS;                                           \
+                                    }                                                                   \
+                                                                                                        \
+                                    if (STR_EQ (#name, N_PUSH)) {                                       \
+                                        val = softCPU->RAM [index];                                     \
+                                                                                                        \
+                                        PUSHSTACK();                                   \
+                                    }                                                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                        \
+                                        val = PopStack (softCPU->st);                                   \
+                                                                                                        \
+                                        softCPU->RAM [index] = val;                                     \
+                                    }                                                                   \
+                                    continue;                                                           \
+                                }                                                                       \
+                                if (res == MEMREGIMM) {                                                 \
+                                    int typeOfReg = *(softCPU->machineCode + softCPU->ip);              \
+                                                                                                        \
+                                    softCPU->ip++;                                                      \
+                                                                                                        \
+                                    double regValue = GetRegValue (typeOfReg, softCPU);                 \
+                                                                                                        \
+                                    shift = *(u_int16_t *)(softCPU->machineCode + softCPU->ip);         \
+                                    softCPU->ip += 2;                                                   \
+                                                                                                        \
+                                    index = (int)regValue + shift;                                      \
+                                                                                                        \
+                                    if (index > RAMVOLUME) {                                            \
+                                        return WRONG_ADDRESS;                                           \
+                                    }                                                                   \
+                                                                                                        \
+                                    if (STR_EQ (#name, N_PUSH)) {                                  \
+                                        val = softCPU->RAM[index];                                      \
+                                                                                                        \
+                                        PUSHSTACK();                                   \
+                                    }                                                                   \
+                                    if (STR_EQ (#name, N_POP)) {                                   \
+                                        val = PopStack (softCPU->st);                                   \
+                                                                                                        \
+                                        softCPU->RAM [index] = val;                                     \
+                                    }                                                                   \
+                                    continue;                                                           \
+                                }                                                                       \
+                                break;                                                                  \
+                            }                                                                           \
+                            case 2: {                                                                   \
+                                code                                                                    \
+                                break;                                                                  \
+                            }                                                                           \
+                            default : {                                                                 \
+                                return UNKNOWN_COMMAND;                                                 \
+                            }                                                                           \
+                        }                                                                               \
+                                                                                                        \
+                        softCPU->ip++;                                                                  \
+                        break;                                                                          \
+                    }                                                                                   \
+
