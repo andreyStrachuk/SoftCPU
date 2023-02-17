@@ -4,7 +4,7 @@ int main (const int argc, const char **argv) {
     FILE *asmProgFile = fopen (argv [1], "rb");
     ASSERT_OKAY (asmProgFile == nullptr, {PrintErrors (UNABLETOOPENFILE); return 0;})
 
-    FILE *code = fopen ("Assembler/code.bin", "wb");
+    FILE *code = fopen ("code.bin", "wb");
     ASSERT_OKAY (code == nullptr, {PrintErrors (UNABLETOOPENFILE); return 0;})
 
     int fileSize = GetFileSize (asmProgFile);
